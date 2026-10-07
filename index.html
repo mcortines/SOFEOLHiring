@@ -21,6 +21,7 @@
         <a href="#home" data-page="home" class="nav-link active">Home</a>
         <a href="#candidates" data-page="candidates" class="nav-link">Candidates <span id="candidate-count" class="nav-count">—</span></a>
         <a href="#roster" data-page="roster" class="nav-link">Roster</a>
+        <a href="#schedule" data-page="schedule" class="nav-link">Schedule</a>
         <a href="#red-flags" data-page="red-flags" class="nav-link">Red flags</a>
         <a href="#green-flags" data-page="green-flags" class="nav-link">Green flags</a>
         <a href="#forms" data-page="forms" class="nav-link">Forms</a>
@@ -67,6 +68,12 @@
         <div class="page-heading"><div><p class="eyebrow">APPLICANT DIRECTORY</p><h1>Candidate <em>roster</em></h1><p class="subheading">Search the published roster and open a candidate to see their application details alongside deliberation notes.</p></div><button id="roster-refresh-button" class="refresh-button" type="button"><span aria-hidden="true">↻</span> Refresh data</button></div>
         <div class="roster-toolbar"><label class="search-box"><span aria-hidden="true">⌕</span><input id="roster-search" type="search" placeholder="Search names, email, or interview status…" autocomplete="off" /></label><span id="roster-count" class="roster-count">Loading roster…</span></div>
         <div class="roster-table-wrap"><table class="roster-table"><thead><tr><th>Candidate</th><th>Group interview</th><th>GPA</th><th></th></tr></thead><tbody id="roster-table-body"></tbody></table><div id="roster-empty" class="empty-state" hidden>No roster entries match that search.</div></div>
+      </section>
+
+      <section id="page-schedule" class="page schedule-page" hidden>
+        <div class="page-heading"><div><p class="eyebrow">INTERVIEW DAY</p><h1>Facilitator <em>schedule</em></h1><p class="subheading">Browse interview teams by day and time. Teams in the same cell interview simultaneously.</p></div><button id="schedule-refresh-button" class="refresh-button" type="button"><span aria-hidden="true">↻</span> Refresh schedule</button></div>
+        <div class="roster-toolbar schedule-toolbar"><label class="schedule-filter"><span>FACILITATOR</span><select id="schedule-facilitator"><option value="all">All facilitators</option></select></label><label class="search-box"><span aria-hidden="true">⌕</span><input id="schedule-search" type="search" placeholder="Search facilitators or times…" autocomplete="off" /></label><span id="schedule-count" class="roster-count">Loading schedule…</span></div>
+        <div id="schedule-list" class="schedule-list"></div><div id="schedule-empty" class="empty-state" hidden>No interviews match these filters.</div>
       </section>
 
 

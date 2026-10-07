@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#12294b" />
+    <meta name="description" content="New Student Orientation candidate deliberation hub." />
+    <title>NSO Deliberation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=2" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="NSO Deliberation home">
+        <img src="gsu-logo.png" alt="Georgia State University" />
+        <span><strong>NSO</strong><small>DELIBERATION HUB</small></span>
+      </a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="#home" data-page="home" class="nav-link active">Home</a>
+        <a href="#candidates" data-page="candidates" class="nav-link">Candidates <span id="candidate-count" class="nav-count">—</span></a>
+        <a href="#roster" data-page="roster" class="nav-link">Roster</a>
+        <a href="#red-flags" data-page="red-flags" class="nav-link">Red flags</a>
+        <a href="#green-flags" data-page="green-flags" class="nav-link">Green flags</a>
+        <a href="#forms" data-page="forms" class="nav-link">Forms</a>
+      </nav>
+      <div class="sync-indicator"><span class="sync-dot"></span><span id="sync-label">Connecting to sheet</span></div>
+    </header>
+
+    <main>
+      <section id="page-home" class="page home-page">
+        <div class="hero-photo"><img src="orientation-team.png" alt="The New Student Orientation team" /><div class="photo-caption"><span class="caption-mark"></span> NEW STUDENT ORIENTATION · GEORGIA STATE</div></div>
+        <div class="hero-copy">
+          <p class="eyebrow">2026 · TEAM DELIBERATION</p>
+          <h1>Every new beginning<br /><em>starts with a person.</em></h1>
+          <p class="hero-description">A shared space for reviewing candidate conversations, comparing interview notes, and making thoughtful decisions together.</p>
+          <div class="hero-actions"><a class="button button-dark" href="#candidates">Explore candidates <span aria-hidden="true">↗</span></a><a class="text-link" href="#forms">Open interview forms <span aria-hidden="true">→</span></a></div>
+          <div class="hero-stats"><div><strong id="stat-candidates">—</strong><span>CANDIDATES</span></div><div><strong>3</strong><span>GROUP SCENARIOS</span></div><div><strong id="last-updated">—</strong><span>SHEET STATUS</span></div></div>
+        </div>
+      </section>
+
+      <section id="page-candidates" class="page candidates-page" hidden>
+        <div class="page-heading"><div><p class="eyebrow">THE DELIBERATION ROOM</p><h1>Candidate <em>directory</em></h1><p class="subheading">Search the roster to review group interview scenarios and facilitator notes.</p></div><button id="refresh-button" class="refresh-button" type="button"><span aria-hidden="true">↻</span> Refresh sheet</button></div>
+        <div class="directory-layout">
+          <aside class="candidate-sidebar">
+            <label class="search-box"><span aria-hidden="true">⌕</span><input id="candidate-search" type="search" placeholder="Search by candidate name…" autocomplete="off" /><kbd>⌘ K</kbd></label>
+            <div class="directory-filters"><label><span>INTERVIEW</span><select id="interview-filter"><option value="all">All candidates</option><option value="attended">Attended group interview</option><option value="missed">Did not attend</option><option value="reviewed">Has deliberation notes</option></select></label><label><span>FLAGS</span><select id="flag-filter"><option value="all">All flags</option><option value="red">Red flag recorded</option><option value="green">Green flag recorded</option><option value="none">No flags recorded</option></select></label></div>
+            <div class="list-heading"><span>ALL CANDIDATES</span><span id="result-count">0</span></div>
+            <div id="candidate-list" class="candidate-list"></div>
+            <div id="empty-results" class="empty-state" hidden>No candidates match that search.</div>
+          </aside>
+          <article id="candidate-detail" class="candidate-detail"><div class="detail-empty"><div class="empty-icon">✳</div><h2>Choose a candidate</h2><p>Select a name to see their group interview notes, scenario responses, and facilitator observations.</p></div></article>
+        </div>
+      </section>
+
+      <section id="page-forms" class="page forms-page" hidden>
+        <div class="page-heading"><div><p class="eyebrow">QUICK ACCESS</p><h1>Interview <em>forms</em></h1><p class="subheading">Open the forms used during candidate interviews and deliberation.</p></div></div>
+        <div class="form-grid">
+          <article class="form-card"><div class="form-icon">01</div><div><p class="eyebrow">GROUP INTERVIEW</p><h2>Group deliberation form</h2><p>Record scenario responses, flags, and facilitator notes for each candidate.</p><a class="form-action unavailable" data-form="group" href="#forms">Form link needed <span>↗</span></a></div></article>
+          <article class="form-card"><div class="form-icon">02</div><div><p class="eyebrow">INDIVIDUAL INTERVIEW</p><h2>Individual interview form</h2><p>Open the form for individual interview feedback and evaluation.</p><a class="form-action unavailable" data-form="individual" href="#forms">Form link needed <span>↗</span></a></div></article>
+        </div>
+        <div class="form-note"><span>i</span><p>The Group Interview form is connected. The Individual Interview tab is connected, but it currently has no published records or form URL.</p></div>
+      </section>
+
+      <section id="page-roster" class="page roster-page" hidden>
+        <div class="page-heading"><div><p class="eyebrow">APPLICANT DIRECTORY</p><h1>Candidate <em>roster</em></h1><p class="subheading">Search the published roster and open a candidate to see their application details alongside deliberation notes.</p></div><button id="roster-refresh-button" class="refresh-button" type="button"><span aria-hidden="true">↻</span> Refresh data</button></div>
+        <div class="roster-toolbar"><label class="search-box"><span aria-hidden="true">⌕</span><input id="roster-search" type="search" placeholder="Search names, email, or interview status…" autocomplete="off" /></label><span id="roster-count" class="roster-count">Loading roster…</span></div>
+        <div class="roster-table-wrap"><table class="roster-table"><thead><tr><th>Candidate</th><th>Group interview</th><th>GPA</th><th></th></tr></thead><tbody id="roster-table-body"></tbody></table><div id="roster-empty" class="empty-state" hidden>No roster entries match that search.</div></div>
+      </section>
+
+
+      <section id="page-red-flags" class="page red-flags-page" hidden>
+        <div class="page-heading"><div><p class="eyebrow">DELIBERATION REVIEW</p><h1>Red flag <em>review</em></h1><p class="subheading">Review each recorded concern with its candidate and facilitator context.</p></div></div>
+        <div class="roster-toolbar"><label class="search-box"><span aria-hidden="true">⌕</span><input id="red-flag-search" type="search" placeholder="Search candidates or flag notes…" autocomplete="off" /></label><span id="red-flag-count" class="roster-count">0 flagged records</span></div>
+        <div id="red-flag-list" class="red-flag-list"></div><div id="red-flag-empty" class="empty-state" hidden>No red flags are recorded for this search.</div>
+      </section>
+
+      <section id="page-green-flags" class="page green-flags-page" hidden>
+        <div class="page-heading"><div><p class="eyebrow">DELIBERATION REVIEW</p><h1>Green flag <em>review</em></h1><p class="subheading">Review each recorded strength with its candidate and facilitator context.</p></div></div>
+        <div class="roster-toolbar"><label class="search-box"><span aria-hidden="true">⌕</span><input id="green-flag-search" type="search" placeholder="Search candidates or positive notes…" autocomplete="off" /></label><span id="green-flag-count" class="roster-count">0 flagged records</span></div>
+        <div id="green-flag-list" class="red-flag-list green-flag-list"></div><div id="green-flag-empty" class="empty-state" hidden>No green flags are recorded for this search.</div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="login-screen" class="login-screen" hidden>
+      <div class="login-card"><img src="gsu-logo.png" alt="Georgia State University" /><p class="eyebrow">NEW STUDENT ORIENTATION</p><h1>Welcome <em>back.</em></h1><p class="login-copy">Sign in to open the deliberation workspace.</p><form id="login-form"><label for="login-id">ID</label><input id="login-id" name="id" autocomplete="username" required /><label for="login-password">Password</label><input id="login-password" name="password" type="password" autocomplete="current-password" required /><p id="login-error" class="login-error" role="alert" hidden></p><button id="login-submit" class="button button-dark" type="submit">Continue <span aria-hidden="true">→</span></button></form><p class="login-hint">Use the credentials listed in the App Settings tab.</p></div>
+    </div>
+    <div id="loading-screen" class="loading-screen" role="status" aria-live="polite" hidden>
+      <div class="loader-content"><div class="loader-mark"><span></span><span></span><span></span></div><p class="loader-kicker">GEORGIA STATE · NEW STUDENT ORIENTATION</p><h1>Getting the team<br /><em>in the room.</em></h1><p class="loader-status" id="loader-status">Connecting to your live sheets</p><div class="loader-track"><span></span></div></div>
+      <span class="loader-corner">DELIBERATION HUB · 2026</span>
+    </div>
+    <script src="app.js" defer></script>
+  </body>
+</html>

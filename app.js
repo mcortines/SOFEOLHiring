@@ -1,12 +1,16 @@
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRi96oVY8-Twrumm6lMime9N3gG7ZKKBEq5N9i1PCCfl81TDmLQuCHrkLU1F_Fsw/pub?output=csv';
 const ROSTER_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRi96oVY8-Twrumm6lMime9N3gG7ZKKBEq5N9i1PCCfl81TDmLQuCHrkLU1F_Fsw/pub?gid=1691210710&single=true&output=csv';
-const INDIVIDUAL_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRi96oVY8-Twrumm6lMime9N3gG7ZKKBEq5N9i1PCCfl81TDmLQuCHrkLU1F_Fsw/pub?gid=684979261&single=true&output=csv';
+const STUDENT_INDIVIDUAL_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRi96oVY8-Twrumm6lMime9N3gG7ZKKBEq5N9i1PCCfl81TDmLQuCHrkLU1F_Fsw/pub?gid=658404828&single=true&output=csv';
 const APP_SETTINGS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRi96oVY8-Twrumm6lMime9N3gG7ZKKBEq5N9i1PCCfl81TDmLQuCHrkLU1F_Fsw/pub?gid=658832579&single=true&output=csv';
 const SCHEDULE_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRi96oVY8-Twrumm6lMime9N3gG7ZKKBEq5N9i1PCCfl81TDmLQuCHrkLU1F_Fsw/pub?gid=904572345&single=true&output=csv';
-const FORM_URLS = { group: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=LIJNcIo1hEeaFkniC3X5QZtYqDnv6RxMvor0K6KnZCtUQU43Tk9QTlo1NjVWTE9IWkxQQVVTWFlCMS4u', individual: '' };
+const FORM_URLS = {
+  group: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=LIJNcIo1hEeaFkniC3X5QZtYqDnv6RxMvor0K6KnZCtUQU43Tk9QTlo1NjVWTE9IWkxQQVVTWFlCMS4u',
+  studentStaff: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=PddaUV6NaUGJXJeJ3HQqcHe1xB3DxpJJpsGMhh-3SCNUQlBLVk5LUFdaQjEzVFI1S1NDT0RaQlBSUy4u',
+  proStaff: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=PddaUV6NaUGJXJeJ3HQqcHe1xB3DxpJJpsGMhh-3SCNUQ1lOSTRSU0hTUjMxSjBSNDBLNEpKRk1ERi4u'
+};
 const REFRESH_INTERVAL = 60_000;
 const DELIBERATION_HEADERS = ['Facilitator','Session','Table Number','Candidate','Scenario 1','Scenario 2','Scenario 3','Opinion','Green Flag','Red Flag','Neutral','Additional Notes'];
-const state = { records: [], roster: [], individual: [], schedule: [], activeCandidate: '', query: '', rosterQuery: '', redFlagQuery: '', greenFlagQuery: '', scheduleQuery: '', scheduleFacilitator: 'all', interviewFilter: 'all', flagFilter: 'all', updatedAt: null, rosterUpdatedAt: null, started: false };
+const state = { records: [], roster: [], individual: [], proStaff: [], schedule: [], activeCandidate: '', individualSlide: 0, proStaffSlide: 0, query: '', rosterQuery: '', redFlagQuery: '', greenFlagQuery: '', scheduleQuery: '', scheduleFacilitator: 'all', interviewFilter: 'all', flagFilter: 'all', updatedAt: null, rosterUpdatedAt: null, started: false };
 const CANDIDATE_NAME_ALIASES = new Map([
   ['Jeremeilia Bent', 'Yendi/Jermellia Bent'],
   ['Kanijah Holiday', 'Kanijah Holliday'],
@@ -81,6 +85,37 @@ function individualFor(name) {
     return candidate && (canonicalCandidateName(candidate) === canonicalCandidateName(name) || (person && rosterMatchesName(person, candidate)));
   });
 }
+function proStaffFor(name) {
+  const person = state.roster.find((row) => rosterName(row) === name);
+  return state.proStaff.filter((row) => {
+    const candidate = individualCandidateName(row);
+    return candidate && (canonicalCandidateName(candidate) === canonicalCandidateName(name) || (person && rosterMatchesName(person, candidate)));
+  });
+}
+function publicIndividualAnswers(row) {
+  const publicQuestions = [
+    'Tell us about yourself. What do you do on campus or what do you like to do for fun?',
+    'Tell us why you are interested in the Orientation Leader Role.',
+    'What are 3 qualities about your personality that you bring to a team?',
+    'Describe how you navigate stressful situations and provide an example of a time where you used a strategy that worked in a stressful moment.',
+    'Name a work, or academic, accomplishment that makes you proud and what steps did you take to accomplish this?',
+    'Describe yourself working within a team setting and what role do you find yourself playing in a team.',
+    'General Notes:'
+  ];
+  return publicQuestions.map((key) => [key.replace(/\s+/g, ' ').trim(), clean(row[key])]).filter(([, value]) => value);
+}
+function publicProStaffAnswers(row) {
+  const publicQuestions = [
+    'Tell us about yourself. What do you do on campus or what do you like to do for fun?',
+    'Tell us why you are interested in the Orientation Leader Role.',
+    'What are 3 qualities about your personality that you bring to a team?',
+    'Describe how you navigate stressful situations and provide an example of a time where you used a strategy that worked in a stressful moment.',
+    'Name a work, or academic, accomplishment that makes you proud and what steps did you take to accomplish this?',
+    'Describe yourself working within a team setting and what role do you find yourself playing in a team.',
+    'Any Questions for us? General Notes:'
+  ];
+  return publicQuestions.map((key) => [key, clean(row[key])]).filter(([, value]) => value);
+}
 function hasFlag(value) { return clean(value) && !['—','-','none','n/a'].includes(clean(value).toLowerCase()); }
 function groupedCandidates() {
   const grouped = new Map();
@@ -146,7 +181,8 @@ function renderRosterProfile(person) {
 function renderCandidateFormActions() {
   const actions = [
     ['group', 'Group interview form'],
-    ['individual', 'Individual interview form']
+    ['studentStaff', 'Student Staff interview form'],
+    ['proStaff', 'Pro Staff interview form']
   ];
   return `<div class="candidate-form-actions">${actions.map(([key, label]) => FORM_URLS[key] ? `<a class="candidate-form-link" href="${esc(FORM_URLS[key])}" target="_blank" rel="noopener noreferrer">${esc(label)} <span>↗</span></a>` : `<span class="candidate-form-link unavailable">${esc(label)} · link needed</span>`).join('')}</div>`;
 }
@@ -158,18 +194,30 @@ function renderInterview(record, index) {
   return `<section class="detail-session"><p class="detail-session-label">${index ? `SESSION ${index + 1} · ` : ''}${esc(record.Session || 'Session not listed')}</p><div class="interview-block"><div class="block-title"><h3>GROUP INTERVIEW</h3><span>Table ${esc(record['Table Number'] || '—')} · ${esc(record.Facilitator || 'Facilitator not listed')}</span></div><div class="scenario-grid">${scenarios}</div>${opinion}</div><div class="interview-block"><div class="block-title"><h3>DELIBERATION FLAGS</h3></div><div class="flag-grid">${flags}</div>${notes}</div></section>`;
 }
 function selectCandidate(name) {
+  if (state.activeCandidate !== name) { state.individualSlide = 0; state.proStaffSlide = 0; }
   state.activeCandidate = name; renderList();
   const candidate = directoryCandidates().find((item) => item.name === name);
   if (!candidate) return;
+  const candidates = directoryCandidates();
+  const candidateIndex = candidates.findIndex((item) => item.name === name);
+  const studentEntries = individualFor(name);
+  state.individualSlide = Math.min(state.individualSlide, Math.max(0, studentEntries.length - 1));
+  const currentStudentEntry = studentEntries[state.individualSlide];
+  const studentAnswers = currentStudentEntry ? publicIndividualAnswers(currentStudentEntry) : [];
+  const proStaffEntries = proStaffFor(name);
+  state.proStaffSlide = Math.min(state.proStaffSlide, Math.max(0, proStaffEntries.length - 1));
+  const currentProStaffEntry = proStaffEntries[state.proStaffSlide];
+  const proStaffAnswers = currentProStaffEntry ? publicProStaffAnswers(currentProStaffEntry) : [];
+  const candidateNav = `<div class="candidate-profile-nav"><button type="button" data-profile-step="-1" ${candidateIndex <= 0 ? 'disabled' : ''} aria-label="Previous candidate">←</button><span>${candidateIndex + 1} of ${candidates.length}</span><button type="button" data-profile-step="1" ${candidateIndex >= candidates.length - 1 ? 'disabled' : ''} aria-label="Next candidate">→</button></div>`;
   const entries = candidate.interviews.map(renderInterview).join('');
-  const individuals = individualFor(name);
-  const individualEntries = individuals.map((row) => {
-    const values = Object.entries(row).filter(([key, value]) => clean(value) && !/candidate|student name|first name|last name|email|phone/i.test(key));
-    return `<section class="individual-card"><div class="block-title"><h3>INDIVIDUAL INTERVIEW</h3><span>${esc(row.Session || row.Date || 'Interview notes')}</span></div><div class="individual-fields">${values.map(([key, value]) => `<div><span>${esc(key)}</span><p>${esc(value)}</p></div>`).join('')}</div></section>`;
-  }).join('');
+  const individualEntries = currentStudentEntry ? `<section class="individual-card"><div class="block-title"><h3>STUDENT STAFF INTERVIEW COMMENTS</h3><span>${esc(currentStudentEntry['Student Staff Name'] || 'Interview feedback')}</span></div><div class="individual-fields">${studentAnswers.map(([key, value]) => `<div><span>${esc(key)}</span><p>${esc(value)}</p></div>`).join('') || '<p>No comment responses recorded.</p>'}</div>${studentEntries.length > 1 ? `<div class="individual-carousel-controls"><button type="button" data-individual-step="-1" ${state.individualSlide <= 0 ? 'disabled' : ''} aria-label="Previous student staff response">←</button><span>Response ${state.individualSlide + 1} of ${studentEntries.length}</span><button type="button" data-individual-step="1" ${state.individualSlide >= studentEntries.length - 1 ? 'disabled' : ''} aria-label="Next student staff response">→</button></div>` : ''}</section>` : '';
+  const proStaffComments = currentProStaffEntry ? `<section class="individual-card"><div class="block-title"><h3>PRO STAFF INTERVIEW COMMENTS</h3><span>${esc(currentProStaffEntry.ProStaffName || currentProStaffEntry['ProStaff Name'] || 'Interview feedback')}</span></div><div class="individual-fields">${proStaffAnswers.map(([key, value]) => `<div><span>${esc(key)}</span><p>${esc(value)}</p></div>`).join('') || '<p>No written comments recorded.</p>'}</div>${proStaffEntries.length > 1 ? `<div class="individual-carousel-controls"><button type="button" data-pro-staff-step="-1" ${state.proStaffSlide <= 0 ? 'disabled' : ''} aria-label="Previous Pro Staff response">←</button><span>Response ${state.proStaffSlide + 1} of ${proStaffEntries.length}</span><button type="button" data-pro-staff-step="1" ${state.proStaffSlide >= proStaffEntries.length - 1 ? 'disabled' : ''} aria-label="Next Pro Staff response">→</button></div>` : ''}</section>` : '';
   const groupMessage = candidate.interviews.length ? '' : '<div class="no-interview-note">No group deliberation record found for this candidate yet.</div>';
-  const individualMessage = individuals.length ? '' : '<div class="no-interview-note">No individual interview record is currently published for this candidate.</div>';
-  $('#candidate-detail').innerHTML = `<header class="detail-header"><div><p class="eyebrow">CANDIDATE PROFILE</p><h2>${esc(candidate.name)}</h2><p class="detail-subtitle">${candidate.interviews.length} group · ${individuals.length} individual interview records</p></div><span class="session-chip">CANDIDATE FILE</span></header>${renderCandidateFormActions()}${renderRosterProfile(candidate.roster)}${groupMessage}${entries}${individualMessage}${individualEntries}`;
+  const individualMessage = studentEntries.length ? '' : '<div class="no-interview-note">No student staff interview comments are currently published for this candidate.</div>';
+  $('#candidate-detail').innerHTML = `<header class="detail-header"><div><p class="eyebrow">CANDIDATE PROFILE</p><h2>${esc(candidate.name)}</h2><p class="detail-subtitle">${candidate.interviews.length} group · ${studentEntries.length} student staff · ${proStaffEntries.length} Pro Staff responses</p></div><span class="session-chip">CANDIDATE FILE</span>${candidateNav}</header>${renderCandidateFormActions()}${renderRosterProfile(candidate.roster)}${groupMessage}${entries}${individualMessage}${individualEntries}${proStaffComments}`;
+  $('#candidate-detail').querySelectorAll('[data-profile-step]').forEach((button) => button.addEventListener('click', () => { const next = candidates[candidateIndex + Number(button.dataset.profileStep)]; if (next) { state.individualSlide = 0; selectCandidate(next.name); } }));
+  $('#candidate-detail').querySelectorAll('[data-individual-step]').forEach((button) => button.addEventListener('click', () => { state.individualSlide = Math.max(0, Math.min(studentEntries.length - 1, state.individualSlide + Number(button.dataset.individualStep))); selectCandidate(name); }));
+  $('#candidate-detail').querySelectorAll('[data-pro-staff-step]').forEach((button) => button.addEventListener('click', () => { state.proStaffSlide = Math.max(0, Math.min(proStaffEntries.length - 1, state.proStaffSlide + Number(button.dataset.proStaffStep))); selectCandidate(name); }));
 }
 
 function renderRosterTable() {
@@ -313,13 +361,23 @@ async function loadRoster(manual = false) {
 
 async function loadIndividual() {
   try {
-    const response = await fetch(`${INDIVIDUAL_CSV_URL}&_=${Date.now()}`, { cache: 'no-store' });
+    const response = await fetch(`${STUDENT_INDIVIDUAL_CSV_URL}&_=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`Individual interview sheet returned ${response.status}`);
     const rows = recordsFromCSV(await response.text());
     state.individual = rows.filter((row) => Object.values(row).some((value) => clean(value)));
     if (state.activeCandidate) selectCandidate(state.activeCandidate);
   } catch (error) {
     console.error('Could not load individual interview sheet:', error);
+  }
+}
+async function loadProStaff() {
+  try {
+    const response = await fetch(`/.netlify/functions/prostaff-comments?_=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`Pro Staff comments returned ${response.status}`);
+    state.proStaff = await response.json();
+    if (state.activeCandidate) selectCandidate(state.activeCandidate);
+  } catch (error) {
+    console.error('Could not load Pro Staff interview sheet:', error);
   }
 }
 async function loadSchedule(manual = false) {
@@ -374,9 +432,9 @@ function startWorkspace() {
   if (state.started) return;
   state.started = true;
   $('#loading-screen').hidden = false;
-  Promise.all([loadGroup(), loadRoster(), loadIndividual(), loadSchedule()]).finally(hideLoading);
+  Promise.all([loadGroup(), loadRoster(), loadIndividual(), loadProStaff(), loadSchedule()]).finally(hideLoading);
   window.setTimeout(hideLoading, 12_000);
-  window.setInterval(() => Promise.all([loadGroup(), loadRoster(), loadIndividual(), loadSchedule()]), REFRESH_INTERVAL);
+  window.setInterval(() => Promise.all([loadGroup(), loadRoster(), loadIndividual(), loadProStaff(), loadSchedule()]), REFRESH_INTERVAL);
 }
 function showPage(page) {
   const valid = ['home','candidates','forms','roster','schedule','red-flags','green-flags'].includes(page) ? page : 'home';
@@ -401,8 +459,8 @@ $('#schedule-search').addEventListener('input', (event) => { state.scheduleQuery
 $('#schedule-facilitator').addEventListener('change', (event) => { state.scheduleFacilitator = event.target.value; renderSchedule(); });
 $('#interview-filter').addEventListener('change', (event) => { state.interviewFilter = event.target.value; renderList(); });
 $('#flag-filter').addEventListener('change', (event) => { state.flagFilter = event.target.value; renderList(); });
-$('#refresh-button').addEventListener('click', () => Promise.all([loadGroup(true), loadRoster(true)]));
-$('#roster-refresh-button').addEventListener('click', () => Promise.all([loadGroup(true), loadRoster(true)]));
+$('#refresh-button').addEventListener('click', () => Promise.all([loadGroup(true), loadRoster(true), loadIndividual(), loadProStaff()]));
+$('#roster-refresh-button').addEventListener('click', () => Promise.all([loadGroup(true), loadRoster(true), loadIndividual(), loadProStaff()]));
 $('#schedule-refresh-button').addEventListener('click', () => loadSchedule(true));
 document.addEventListener('keydown', (event) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); location.hash = '#candidates'; showPage('candidates'); $('#candidate-search').focus(); } });
 document.querySelectorAll('[data-form]').forEach((link) => { const url = FORM_URLS[link.dataset.form]; if (url) { link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.classList.remove('unavailable'); link.textContent = 'Open Google Form ↗'; } });

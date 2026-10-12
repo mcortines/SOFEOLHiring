@@ -1,0 +1,10 @@
+{
+  "name": "nso-deliberation-hub",
+  "private": true,
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "devDependencies": {
+    "netlify-cli": "^23.0.0"
+  }
+}

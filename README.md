@@ -1,29 +1,39 @@
 # NSO Deliberation Hub
 
-Static front end for the published group interview, candidate roster, and individual interview tabs.
+The hub has a static public site and Netlify Functions for private Pro Staff scores.
 
 ## Run locally
 
-Serve this folder with a static file server. For example:
+Serve the folder with a static file server for the public pages:
 
 ```sh
 python3 -m http.server 8000
 ```
 
-Open `http://localhost:8000`. The site refreshes the published sheets every minute. Candidate filters include attendance and flag status; the Red Flags and Green Flags tabs provide searchable review lists.
+The Netlify Functions for Pro Staff comments and `/admin/` require Netlify's function runtime and configured environment variables.
 
 ## Data sources
 
 - Group Interview CSV: `SHEET_CSV_URL` in `app.js`
 - Candidate Roster CSV: `ROSTER_CSV_URL` in `app.js`
-- Individual Interview CSV: `INDIVIDUAL_CSV_URL` in `app.js`
-- Schedule tab: `SCHEDULE_CSV_URL` in `app.js` (published tab ID: `904572345`)
-- Group Interview form link: `FORM_URLS` in `app.js`
+- Student Staff Individual Interview CSV: `STUDENT_INDIVIDUAL_CSV_URL` in `app.js`
+- Pro Staff Individual Interview tab: read server-side by Netlify Functions. Candidate profiles receive only an explicit allowlist of written response fields; scored fields are excluded.
+- Schedule tab: `SCHEDULE_CSV_URL` in `app.js`
+- Group, Student Staff, and Pro Staff form links: `FORM_URLS` in `app.js`
 
-The Group Interview form is connected. The Individual Interview sheet currently has no published rows or form URL.
+The candidate profiles show responses from both Student Staff and Pro Staff interviews. The Pro Staff comments endpoint filters to written response fields and never returns score columns.
 
-The sign-in screen checks the ID and password from the published App Settings CSV and keeps the session unlocked in the current browser tab.
+## Configure private admin access
 
-## Access and privacy
+Keep the Pro Staff and future leaderboard tabs unpublished. In Netlify, set these environment variables:
 
-These sheets are published CSVs, so anyone with their links can read their contents directly. The sign-in screen is a convenience gate, not security: its credentials and the sheet data can be read from the published CSVs. Hiding email and phone fields in the site does not remove them from the published roster CSV. Real access control requires unpublishing the sheets and serving them through an authenticated backend or private hosting.
+- `ADMIN_USER` and `ADMIN_PASSWORD`: admin sign-in credentials.
+- `GOOGLE_SHEET_ID`: spreadsheet ID from its normal `/spreadsheets/d/.../edit` URL.
+- `GOOGLE_SERVICE_ACCOUNT_JSON`: service account JSON with read access to the workbook. Enable the Google Sheets API and share the private workbook with the service account email as a Viewer.
+- `LEADERBOARD_RANGE` (optional until the leaderboard tab exists), for example `'Leaderboard'!A:Z`.
+
+Deploy the site and functions together, then visit `/admin/`. The leaderboard shows a setup message until `LEADERBOARD_RANGE` points to a tab with data.
+
+## Privacy
+
+Published sheets can be read by anyone with their links. The Pro Staff tab must be removed from the published workbook before scores are considered private. The existing sign-in screen is a convenience gate only. Hiding email and phone fields in the site does not remove them from the published roster CSV.

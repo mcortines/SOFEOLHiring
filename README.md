@@ -28,9 +28,8 @@ The candidate profiles show responses from both Student Staff and Pro Staff inte
 
 ## Configure private admin access
 
-Keep the Pro Staff and future leaderboard tabs unpublished. In Netlify, set these environment variables:
+Keep the Pro Staff and future leaderboard tabs unpublished. Admin sign-in reads the `ADMIN_USER` and `ADMIN_PASSWORD` rows from the published `App Settings` tab. Anyone who can access that published tab can read those credentials and use them to sign in. The following Netlify variables are still required:
 
-- `ADMIN_USER` and `ADMIN_PASSWORD`: admin sign-in credentials.
 - `GOOGLE_SHEET_ID`: spreadsheet ID from its normal `/spreadsheets/d/.../edit` URL.
 - `GOOGLE_SERVICE_ACCOUNT_JSON`: service account JSON with read access to the workbook. Enable the Google Sheets API and share the private workbook with the service account email as a Viewer.
 - `LEADERBOARD_RANGE` (optional until the leaderboard tab exists), for example `'Leaderboard'!A:Z`.

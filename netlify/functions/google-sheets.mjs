@@ -17,8 +17,7 @@ export async function isAuthorized(event) {
   const splitAt = supplied.indexOf(':');
   if (splitAt < 0) return false;
 
-  const range = process.env.ADMIN_CREDENTIALS_RANGE || "'Admin Credentials'!A:B";
-  const rows = await sheetRows(range);
+  const rows = await sheetRows("'App Settings'!A:B");
   const settings = new Map(rows.map((row) => [String(row.Setting || '').trim().toUpperCase(), String(row.Value || '').trim()]));
   const expectedUser = settings.get('ADMIN_USER') || '';
   const expectedPassword = settings.get('ADMIN_PASSWORD') || '';

@@ -7,10 +7,7 @@ export function jsonResponse(statusCode, payload) {
   });
 }
 
-export function isAuthorized(event) {
-  const expectedUser = process.env.ADMIN_USER || '';
-  const expectedPassword = process.env.ADMIN_PASSWORD || '';
-  if (!expectedUser || !expectedPassword) return false;
+export async function isAuthorized(event) {
   const authorization = typeof event.headers?.get === 'function'
     ? event.headers.get('authorization') || ''
     : event.headers?.authorization || event.headers?.Authorization || '';
@@ -18,7 +15,15 @@ export function isAuthorized(event) {
   let supplied;
   try { supplied = Buffer.from(authorization.slice(6), 'base64').toString('utf8'); } catch { return false; }
   const splitAt = supplied.indexOf(':');
-  return splitAt >= 0 && supplied.slice(0, splitAt) === expectedUser && supplied.slice(splitAt + 1) === expectedPassword;
+  if (splitAt < 0) return false;
+
+  const range = process.env.ADMIN_CREDENTIALS_RANGE || "'Admin Credentials'!A:B";
+  const rows = await sheetRows(range);
+  const settings = new Map(rows.map((row) => [String(row.Setting || '').trim().toUpperCase(), String(row.Value || '').trim()]));
+  const expectedUser = settings.get('ADMIN_USER') || '';
+  const expectedPassword = settings.get('ADMIN_PASSWORD') || '';
+  if (!expectedUser || !expectedPassword) throw new Error('Admin credentials are missing from the configured sheet range.');
+  return supplied.slice(0, splitAt) === expectedUser && supplied.slice(splitAt + 1) === expectedPassword;
 }
 
 async function googleAccessToken() {

@@ -1,5 +1,7 @@
 import { createSign } from 'node:crypto';
 
+const APP_SETTINGS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRi96oVY8-Twrumm6lMime9N3gG7ZKKBEq5N9i1PCCfl81TDmLQuCHrkLU1F_Fsw/pub?gid=658832579&single=true&output=csv';
+
 export function jsonResponse(statusCode, payload) {
   return new Response(JSON.stringify(payload), {
     status: statusCode,
@@ -17,12 +19,37 @@ export async function isAuthorized(event) {
   const splitAt = supplied.indexOf(':');
   if (splitAt < 0) return false;
 
-  const rows = await sheetRows("'App Settings'!A:B");
-  const settings = new Map(rows.map((row) => [String(row.Setting || '').trim().toUpperCase(), String(row.Value || '').trim()]));
+  const response = await fetch(APP_SETTINGS_CSV_URL, { cache: 'no-store' });
+  if (!response.ok) throw new Error('Could not read the published App Settings sheet.');
+  const [headers = [], ...records] = parseCsv(await response.text());
+  const settingIndex = headers.findIndex((header) => header.trim().toUpperCase() === 'SETTING');
+  const valueIndex = headers.findIndex((header) => header.trim().toUpperCase() === 'VALUE');
+  if (settingIndex < 0 || valueIndex < 0) throw new Error('The App Settings sheet needs Setting and Value columns.');
+  const settings = new Map(records.map((row) => [String(row[settingIndex] || '').trim().toUpperCase(), String(row[valueIndex] || '').trim()]));
   const expectedUser = settings.get('ADMIN_USER') || '';
   const expectedPassword = settings.get('ADMIN_PASSWORD') || '';
-  if (!expectedUser || !expectedPassword) throw new Error('Admin credentials are missing from the configured sheet range.');
+  if (!expectedUser || !expectedPassword) throw new Error('Admin credentials are missing from App Settings.');
   return supplied.slice(0, splitAt) === expectedUser && supplied.slice(splitAt + 1) === expectedPassword;
+}
+
+function parseCsv(source) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let quoted = false;
+  for (let i = 0; i < source.length; i += 1) {
+    const char = source[i];
+    if (quoted) {
+      if (char === '"' && source[i + 1] === '"') { field += '"'; i += 1; }
+      else if (char === '"') quoted = false;
+      else field += char;
+    } else if (char === '"') quoted = true;
+    else if (char === ',') { row.push(field); field = ''; }
+    else if (char === '\n') { row.push(field.replace(/\r$/, '')); rows.push(row); row = []; field = ''; }
+    else field += char;
+  }
+  if (field.length || row.length) { row.push(field.replace(/\r$/, '')); rows.push(row); }
+  return rows;
 }
 
 async function googleAccessToken() {

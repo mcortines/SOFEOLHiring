@@ -25,9 +25,13 @@ export async function isAuthorized(event) {
   const settingIndex = headers.findIndex((header) => header.trim().toUpperCase() === 'SETTING');
   const valueIndex = headers.findIndex((header) => header.trim().toUpperCase() === 'VALUE');
   if (settingIndex < 0 || valueIndex < 0) throw new Error('The App Settings sheet needs Setting and Value columns.');
-  const settings = new Map(records.map((row) => [String(row[settingIndex] || '').trim().toUpperCase(), String(row[valueIndex] || '').trim()]));
-  const expectedUser = settings.get('ADMIN_USER') || '';
-  const expectedPassword = settings.get('ADMIN_PASSWORD') || '';
+  const normalizeSetting = (value) => String(value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const settings = new Map(records.map((row) => [normalizeSetting(row[settingIndex]), String(row[valueIndex] || '').trim()]));
+  // Accept common App Settings labels while keeping the main-site credentials
+  // (`User ID` and `Password`) separate from the admin credentials.
+  const firstSetting = (...names) => names.map(normalizeSetting).map((name) => settings.get(name)).find(Boolean) || '';
+  const expectedUser = firstSetting('ADMIN_USER', 'ADMIN_USER_ID', 'ADMIN_ID', 'ADMIN_NAME');
+  const expectedPassword = firstSetting('ADMIN_PASSWORD', 'ADMIN_PASS');
   if (!expectedUser || !expectedPassword) throw new Error('Admin credentials are missing from App Settings.');
   return supplied.slice(0, splitAt) === expectedUser && supplied.slice(splitAt + 1) === expectedPassword;
 }

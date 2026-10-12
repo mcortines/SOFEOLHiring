@@ -1,10 +1,10 @@
 import { errorResponse, isAuthorized, jsonResponse, sheetRows } from './google-sheets.mjs';
 
-export default async function handler(event) {
-  if (event.httpMethod !== 'GET') return jsonResponse(405, { error: 'Method not allowed.' });
-  if (!isAuthorized(event)) return jsonResponse(401, { error: 'Sign in failed.' });
+export default async function handler(request) {
+  if (request.method !== 'GET') return jsonResponse(405, { error: 'Method not allowed.' });
+  if (!isAuthorized({ headers: request.headers })) return jsonResponse(401, { error: 'Sign in failed.' });
   try {
-    const kind = event.queryStringParameters?.kind || 'scores';
+    const kind = new URL(request.url).searchParams.get('kind') || 'scores';
     if (kind === 'leaderboard') {
       const range = process.env.LEADERBOARD_RANGE;
       if (!range) return jsonResponse(200, { configured: false, rows: [] });

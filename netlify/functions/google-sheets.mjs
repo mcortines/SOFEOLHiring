@@ -1,14 +1,19 @@
 import { createSign } from 'node:crypto';
 
 export function jsonResponse(statusCode, payload) {
-  return { statusCode, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }, body: JSON.stringify(payload) };
+  return new Response(JSON.stringify(payload), {
+    status: statusCode,
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }
+  });
 }
 
 export function isAuthorized(event) {
   const expectedUser = process.env.ADMIN_USER || '';
   const expectedPassword = process.env.ADMIN_PASSWORD || '';
   if (!expectedUser || !expectedPassword) return false;
-  const authorization = event.headers?.authorization || event.headers?.Authorization || '';
+  const authorization = typeof event.headers?.get === 'function'
+    ? event.headers.get('authorization') || ''
+    : event.headers?.authorization || event.headers?.Authorization || '';
   if (!authorization.startsWith('Basic ')) return false;
   let supplied;
   try { supplied = Buffer.from(authorization.slice(6), 'base64').toString('utf8'); } catch { return false; }

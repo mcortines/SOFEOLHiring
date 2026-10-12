@@ -2,8 +2,8 @@ import { errorResponse, isAuthorized, jsonResponse, sheetRows } from './google-s
 
 export default async function handler(request) {
   if (request.method !== 'GET') return jsonResponse(405, { error: 'Method not allowed.' });
-  if (!isAuthorized({ headers: request.headers })) return jsonResponse(401, { error: 'Sign in failed.' });
   try {
+    if (!await isAuthorized({ headers: request.headers })) return jsonResponse(401, { error: 'Sign in failed.' });
     const kind = new URL(request.url).searchParams.get('kind') || 'scores';
     if (kind === 'leaderboard') {
       const range = process.env.LEADERBOARD_RANGE;

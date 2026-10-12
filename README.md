@@ -4,13 +4,16 @@ The hub has a static public site and Netlify Functions for private Pro Staff sco
 
 ## Run locally
 
-Serve the folder with a static file server for the public pages:
+Install the local development dependencies, then run Netlify Dev so the pages and server-side Functions are both available:
 
 ```sh
-python3 -m http.server 8000
+npm install
+cp .env.example .env
+# Fill in .env with local admin credentials and private Google Sheets access.
+npm run dev -- --offline
 ```
 
-The Netlify Functions for Pro Staff comments and `/admin/` require Netlify's function runtime and configured environment variables.
+Open `http://localhost:8888/`; the Admin navigation button opens `http://localhost:8888/admin/`. Keep `.env` private. Netlify Dev runs the local Functions and reads local environment variables. See [Netlify's local development guide](https://docs.netlify.com/api-and-cli-guides/cli-guides/local-development/).
 
 ## Data sources
 

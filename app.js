@@ -414,10 +414,13 @@ async function verifyLogin(event) {
     const response = await fetch(`${APP_SETTINGS_CSV_URL}&_=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) throw new Error('Could not reach App Settings.');
     const settings = recordsFromCSV(await response.text());
-    const values = Object.fromEntries(settings.map((row) => [normalize(row.Setting), clean(row.Value)]));
-    if (!values['user id'] || !values.password) throw new Error('The published App Settings tab needs an ID and password.');
-    const idMatches = $('#login-id').value.trim() === values['user id'];
-    const passwordMatches = $('#login-password').value === values.password;
+    const userIdIndex = settings.findIndex((row) => normalize(row.Setting) === 'user id');
+    const userId = userIdIndex >= 0 ? clean(settings[userIdIndex].Value) : '';
+    const passwordRow = userIdIndex >= 0 ? settings.slice(userIdIndex + 1).find((row) => normalize(row.Setting) === 'password') : null;
+    const password = clean(passwordRow?.Value);
+    if (!userId || !password) throw new Error('The published App Settings tab needs an ID and password.');
+    const idMatches = $('#login-id').value.trim() === userId;
+    const passwordMatches = $('#login-password').value === password;
     if (!idMatches || !passwordMatches) throw new Error('The ID or password is incorrect.');
     sessionStorage.setItem('nso-deliberation-signed-in', 'true');
     $('#login-form').reset();

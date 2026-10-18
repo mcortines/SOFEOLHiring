@@ -6,15 +6,15 @@
     <meta name="theme-color" content="#12294b" />
     <title>Admin · NSO Deliberation</title>
     <link rel="stylesheet" href="../styles.css?v=4" />
-    <link rel="stylesheet" href="admin.css?v=1" />
-    <script src="admin.js?v=1" defer></script>
+    <link rel="stylesheet" href="admin.css?v=3" />
+    <script src="admin.js?v=3" defer></script>
   </head>
   <body class="admin-body">
     <header class="topbar"><a class="brand" href="/" aria-label="NSO Deliberation home"><img src="../gsu-logo.png" alt="Georgia State University" /><span><strong>NSO</strong><small>DELIBERATION HUB</small></span></a><a class="admin-back" href="/#candidates">← Candidate directory</a></header>
     <main class="admin-shell">
       <section id="admin-login" class="admin-login-card">
-        <p class="eyebrow">PRO STAFF WORKSPACE</p><h1>Admin <em>sign in.</em></h1><p class="admin-subtitle">Sign in to review interview scores and the leaderboard.</p>
-        <form id="admin-login-form"><label for="admin-user">Pro Staff ID</label><input id="admin-user" name="username" autocomplete="username" required /><label for="admin-password">Password</label><input id="admin-password" name="password" type="password" autocomplete="current-password" required /><p id="admin-login-error" class="admin-error" role="alert" hidden></p><button class="button button-dark" type="submit">Continue <span aria-hidden="true">→</span></button></form>
+        <p class="eyebrow">PRO STAFF WORKSPACE</p><h1>Admin <em>sign in.</em></h1><p class="admin-subtitle">Use the credentials listed in App Settings to review interview scores and the leaderboard.</p>
+        <form id="admin-login-form"><label for="admin-user">Admin username</label><input id="admin-user" name="username" autocomplete="username" required /><label for="admin-password">Admin password</label><div class="admin-password-field"><input id="admin-password" name="password" type="password" autocomplete="current-password" required /><button id="toggle-admin-password" class="admin-password-toggle" type="button" aria-controls="admin-password" aria-pressed="false">Show</button></div><p id="admin-login-error" class="admin-error" role="alert" hidden></p><button class="button button-dark" type="submit">Continue <span aria-hidden="true">→</span></button></form>
       </section>
       <section id="admin-workspace" hidden>
         <div class="admin-heading"><div><p class="eyebrow">PRIVATE REVIEW</p><h1>Scores &amp; leaderboard</h1><p class="admin-subtitle">Pro Staff score data is available only after server-side sign in.</p></div><button id="admin-logout" class="admin-logout" type="button">Sign out</button></div>

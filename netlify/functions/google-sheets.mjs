@@ -30,7 +30,10 @@ export async function isAuthorized(event) {
   const firstSetting = (...names) => names.map(normalizeSetting).map((name) => settings.get(name)).find(Boolean) || '';
   const expectedUser = firstSetting('ADMIN_USER', 'ADMIN_USER_ID', 'ADMIN_ID', 'ADMIN_NAME');
   const expectedPassword = firstSetting('ADMIN_PASSWORD', 'ADMIN_PASS');
-  if (!expectedUser || !expectedPassword) return false;
+  if (!expectedUser || !expectedPassword) {
+    const missing = [!expectedUser && 'ADMIN_USER', !expectedPassword && 'ADMIN_PASSWORD'].filter(Boolean);
+    throw new Error(`Admin sign-in is not configured: missing ${missing.join(' and ')} row${missing.length > 1 ? 's' : ''} in App Settings.`);
+  }
   const suppliedUser = supplied.slice(0, splitAt);
   const suppliedPassword = supplied.slice(splitAt + 1);
   const matches = (actual, expected) => {

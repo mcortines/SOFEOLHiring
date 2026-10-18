@@ -1,4 +1,4 @@
-import { createSign } from 'node:crypto';
+import { createSign, timingSafeEqual } from 'node:crypto';
 
 const APP_SETTINGS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRi96oVY8-Twrumm6lMime9N3gG7ZKKBEq5N9i1PCCfl81TDmLQuCHrkLU1F_Fsw/pub?gid=658832579&single=true&output=csv';
 
@@ -27,13 +27,18 @@ export async function isAuthorized(event) {
   if (settingIndex < 0 || valueIndex < 0) throw new Error('The App Settings sheet needs Setting and Value columns.');
   const normalizeSetting = (value) => String(value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   const settings = new Map(records.map((row) => [normalizeSetting(row[settingIndex]), String(row[valueIndex] || '').trim()]));
-  // Accept common App Settings labels while keeping the main-site credentials
-  // (`User ID` and `Password`) separate from the admin credentials.
   const firstSetting = (...names) => names.map(normalizeSetting).map((name) => settings.get(name)).find(Boolean) || '';
   const expectedUser = firstSetting('ADMIN_USER', 'ADMIN_USER_ID', 'ADMIN_ID', 'ADMIN_NAME');
   const expectedPassword = firstSetting('ADMIN_PASSWORD', 'ADMIN_PASS');
-  if (!expectedUser || !expectedPassword) throw new Error('Admin credentials are missing from App Settings.');
-  return supplied.slice(0, splitAt) === expectedUser && supplied.slice(splitAt + 1) === expectedPassword;
+  if (!expectedUser || !expectedPassword) return false;
+  const suppliedUser = supplied.slice(0, splitAt);
+  const suppliedPassword = supplied.slice(splitAt + 1);
+  const matches = (actual, expected) => {
+    const actualBytes = Buffer.from(actual);
+    const expectedBytes = Buffer.from(expected);
+    return actualBytes.length === expectedBytes.length && timingSafeEqual(actualBytes, expectedBytes);
+  };
+  return matches(suppliedUser, expectedUser) && matches(suppliedPassword, expectedPassword);
 }
 
 function parseCsv(source) {

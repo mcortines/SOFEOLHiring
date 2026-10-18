@@ -2,6 +2,8 @@ const loginPanel = document.querySelector('#admin-login');
 const workspace = document.querySelector('#admin-workspace');
 const loginForm = document.querySelector('#admin-login-form');
 const loginError = document.querySelector('#admin-login-error');
+const passwordInput = document.querySelector('#admin-password');
+const passwordToggle = document.querySelector('#toggle-admin-password');
 const scoreSelect = document.querySelector('#score-candidate');
 const scoreDetail = document.querySelector('#score-detail');
 const leaderboardDetail = document.querySelector('#leaderboard-detail');
@@ -50,18 +52,30 @@ loginForm.addEventListener('submit', async (event) => {
     scoreRows = payload.rows || [];
     scoreSelect.innerHTML = scoreRows.map((row, index) => `<option value="${index}">${esc(candidateName(row))}</option>`).join('');
     loginPanel.hidden = true;
+    loginForm.reset();
+    passwordInput.type = 'password';
+    passwordToggle.textContent = 'Show';
+    passwordToggle.setAttribute('aria-pressed', 'false');
     workspace.hidden = false;
     renderScores();
     try { renderLeaderboard(await api('?kind=leaderboard')); }
     catch (error) { leaderboardDetail.innerHTML = `<div class="empty-admin">${esc(error.message)}</div>`; }
   } catch (error) {
     authorization = '';
-    loginError.textContent = error.message;
+    loginError.textContent = error.message === 'Sign in failed.'
+      ? 'The deployed admin function returned a generic sign-in error. Redeploy the latest admin function to see the specific reason.'
+      : error.message;
     loginError.hidden = false;
   } finally {
     button.disabled = false;
     button.textContent = originalText;
   }
+});
+passwordToggle.addEventListener('click', () => {
+  const showing = passwordInput.type === 'password';
+  passwordInput.type = showing ? 'text' : 'password';
+  passwordToggle.textContent = showing ? 'Hide' : 'Show';
+  passwordToggle.setAttribute('aria-pressed', String(showing));
 });
 scoreSelect.addEventListener('change', renderScores);
 document.querySelectorAll('[data-admin-tab]').forEach((button) => button.addEventListener('click', () => {

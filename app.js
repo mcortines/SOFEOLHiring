@@ -10,7 +10,7 @@ const FORM_URLS = {
 };
 const REFRESH_INTERVAL = 60_000;
 const DELIBERATION_HEADERS = ['Facilitator','Session','Table Number','Candidate','Scenario 1','Scenario 2','Scenario 3','Opinion','Green Flag','Red Flag','Neutral','Additional Notes'];
-const state = { records: [], roster: [], individual: [], proStaff: [], schedule: [], activeCandidate: '', individualSlide: 0, proStaffSlide: 0, query: '', rosterQuery: '', redFlagQuery: '', greenFlagQuery: '', scheduleQuery: '', scheduleFacilitator: 'all', interviewFilter: 'all', flagFilter: 'all', updatedAt: null, rosterUpdatedAt: null, started: false };
+const state = { records: [], roster: [], individual: [], proStaff: [], schedule: [], activeCandidate: '', individualSlide: 0, proStaffSlide: 0, query: '', rosterQuery: '', redFlagQuery: '', greenFlagQuery: '', scheduleQuery: '', scheduleFacilitator: 'all', interviewFilter: 'all', studentStaffFilter: 'all', flagFilter: 'all', updatedAt: null, rosterUpdatedAt: null, started: false };
 const CANDIDATE_NAME_ALIASES = new Map([
   ['Jeremeilia Bent', 'Yendi/Jermellia Bent'],
   ['Kanijah Holiday', 'Kanijah Holliday'],
@@ -142,15 +142,18 @@ function toast(message) { const element = $('#toast'); element.textContent = mes
 
 function renderList() {
   const candidates = directoryCandidates();
+  const studentStaffCandidates = new Set(candidates.filter(({ name }) => individualFor(name).some((row) => publicIndividualAnswers(row).length > 0)).map(({ name }) => name));
   const filtered = candidates.filter(({ name, roster, interviews }) => {
     const haystack = name.toLowerCase();
     const attendance = attendanceStatus(roster?.['Did the attend the group interview?'], interviews.length > 0);
     const hasNotes = interviews.length > 0;
+    const hasStudentStaffComments = studentStaffCandidates.has(name);
     const hasRed = interviews.some((row) => hasFlag(row['Red Flag']));
     const hasGreen = interviews.some((row) => hasFlag(row['Green Flag']));
     const interviewMatches = state.interviewFilter === 'all' || (state.interviewFilter === 'attended' && attendance === 'attended') || (state.interviewFilter === 'missed' && attendance === 'missed') || (state.interviewFilter === 'reviewed' && hasNotes);
+    const studentStaffMatches = state.studentStaffFilter === 'all' || (state.studentStaffFilter === 'has-comments' && hasStudentStaffComments) || (state.studentStaffFilter === 'no-comments' && !hasStudentStaffComments);
     const flagMatches = state.flagFilter === 'all' || (state.flagFilter === 'red' && hasRed) || (state.flagFilter === 'green' && hasGreen) || (state.flagFilter === 'none' && !hasRed && !hasGreen);
-    return haystack.includes(state.query.toLowerCase()) && interviewMatches && flagMatches;
+    return haystack.includes(state.query.toLowerCase()) && interviewMatches && studentStaffMatches && flagMatches;
   });
   $('#candidate-count').textContent = state.roster.length || candidates.length;
   $('#stat-candidates').textContent = state.roster.length || candidates.length;
@@ -158,6 +161,8 @@ function renderList() {
   const missedCount = candidates.filter(({ roster, interviews }) => attendanceStatus(roster?.['Did the attend the group interview?'], interviews.length > 0) === 'missed').length;
   $('#interview-filter option[value="attended"]').textContent = `Attended group interview (${attendeeCount})`;
   $('#interview-filter option[value="missed"]').textContent = `Did not attend (${missedCount})`;
+  $('#student-staff-filter option[value="has-comments"]').textContent = `Has comments (${studentStaffCandidates.size})`;
+  $('#student-staff-filter option[value="no-comments"]').textContent = `No comments (${candidates.length - studentStaffCandidates.size})`;
   $('#result-count').textContent = filtered.length;
   $('#empty-results').hidden = filtered.length > 0;
   $('#candidate-list').innerHTML = filtered.slice(0, 250).map(({ name, interviews, roster }) => {
@@ -365,6 +370,7 @@ async function loadIndividual() {
     if (!response.ok) throw new Error(`Individual interview sheet returned ${response.status}`);
     const rows = recordsFromCSV(await response.text());
     state.individual = rows.filter((row) => Object.values(row).some((value) => clean(value)));
+    renderList();
     if (state.activeCandidate) selectCandidate(state.activeCandidate);
   } catch (error) {
     console.error('Could not load individual interview sheet:', error);
@@ -461,6 +467,7 @@ $('#green-flag-search').addEventListener('input', (event) => { state.greenFlagQu
 $('#schedule-search').addEventListener('input', (event) => { state.scheduleQuery = event.target.value.trim(); renderSchedule(); });
 $('#schedule-facilitator').addEventListener('change', (event) => { state.scheduleFacilitator = event.target.value; renderSchedule(); });
 $('#interview-filter').addEventListener('change', (event) => { state.interviewFilter = event.target.value; renderList(); });
+$('#student-staff-filter').addEventListener('change', (event) => { state.studentStaffFilter = event.target.value; renderList(); });
 $('#flag-filter').addEventListener('change', (event) => { state.flagFilter = event.target.value; renderList(); });
 $('#refresh-button').addEventListener('click', () => Promise.all([loadGroup(true), loadRoster(true), loadIndividual(), loadProStaff()]));
 $('#roster-refresh-button').addEventListener('click', () => Promise.all([loadGroup(true), loadRoster(true), loadIndividual(), loadProStaff()]));

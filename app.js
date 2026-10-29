@@ -46,6 +46,7 @@ function deliberationRecords(source) {
   return rows.map((row) => Object.fromEntries(DELIBERATION_HEADERS.map((header) => [header, row[header] || '']))).filter((row) => row.Candidate);
 }
 function clean(value) { return String(value || '').trim(); }
+function hasComment(value) { return Boolean(clean(value)) && !['na', 'n/a', 'none', '—', '-'].includes(clean(value).toLowerCase()); }
 function normalize(value) { return clean(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
 function canonicalCandidateName(value) { const normalized = normalize(value); return CANDIDATE_NAME_ALIASES.get(normalized) || normalized; }
 function hasGroupInterviewRecord(person) {
@@ -102,7 +103,7 @@ function publicIndividualAnswers(row) {
     'Describe yourself working within a team setting and what role do you find yourself playing in a team.',
     'General Notes:'
   ];
-  return publicQuestions.map((key) => [key.replace(/\s+/g, ' ').trim(), clean(row[key])]).filter(([, value]) => value);
+  return publicQuestions.map((key) => [key.replace(/\s+/g, ' ').trim(), clean(row[key])]).filter(([, value]) => hasComment(value));
 }
 function publicProStaffAnswers(row) {
   const publicQuestions = [
@@ -132,6 +133,15 @@ function directoryCandidates() {
   for (const item of groupedCandidates()) {
     if (!byName.has(item.name)) byName.set(item.name, item);
     else byName.get(item.name).interviews = item.interviews;
+  }
+  for (const row of state.individual) {
+    const responseName = individualCandidateName(row);
+    if (!responseName || publicIndividualAnswers(row).length === 0) continue;
+    const alreadyListed = [...byName.keys()].some((name) => individualFor(name).includes(row));
+    if (alreadyListed) continue;
+    const person = rosterForGroup(responseName);
+    const name = person ? rosterName(person) : responseName;
+    if (!byName.has(name)) byName.set(name, { name, roster: person || null, interviews: groupRecordsFor(responseName) });
   }
   return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
